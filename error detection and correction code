@@ -1,0 +1,67 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+// Company: 
+// Engineer: 
+// 
+// Create Date: 18.06.2023 18:36:03
+// Design Name: 
+// Module Name: ecc3
+// Project Name: 
+// Target Devices: 
+// Tool Versions: 
+// Description: 
+// 
+// Dependencies: 
+// 
+// Revision:
+// Revision 0.01 - File Created
+// Additional Comments:
+// 
+//////////////////////////////////////////////////////////////////////////////////
+
+
+module hamming_code ( input [3:0] data_in, 
+                      input enable,
+                      output [6:0] encoded_data_out,
+                      output error_detected, 
+                      output [3:0] corrected_data_out ); 
+reg [3:0] syndrome;
+reg [6:0] encoded_data_out;     
+reg error_detected;
+reg [3:0] corrected_data_out; //Parity Generator Matrix
+reg [7:0] G;
+initial begin
+G = 8'b11010011;
+end //Syndrome Decoder Matrix 
+reg [7:0] H; 
+initial begin
+H = 8'b10101010;
+end 
+always @(data_in or enable)
+begin
+if (enable)
+begin
+encoded_data_out[6:4] = data_in;
+encoded_data_out[3] = encoded_data_out[6] ^ encoded_data_out[5] ^ encoded_data_out[4]; 
+encoded_data_out[2] = encoded_data_out[6] ^ encoded_data_out[5] ^ encoded_data_out[3];
+encoded_data_out[1] = encoded_data_out[6] ^ encoded_data_out[4] ^ encoded_data_out[3];
+encoded_data_out[0] = encoded_data_out[5] ^ encoded_data_out[4] ^ encoded_data_out[3];//error detection
+error_detected = (H & encoded_data_out) != 0; //error correction
+if (error_detected)
+begin
+syndrome = H & encoded_data_out;
+corrected_data_out = encoded_data_out ^ (1 << (syndrome - 1)); 
+end
+else 
+begin
+corrected_data_out = encoded_data_out[6:3]; 
+end 
+end
+else 
+begin
+encoded_data_out = 7'b0;
+error_detected=0;
+corrected_data_out = 4'b0;
+end
+end
+endmodule
